@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | Amazona</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <a href="index.html" class="logo" style="color:var(--dark); justify-content:center; margin-bottom:1rem;"><i class="fas fa-bolt"></i> Ama<span>zona</span></a>
+      <h2>Create Account</h2>
+      <p>Join Amazona today as a Customer</p>
+    </div>
+
+    <form id="register-form" onsubmit="return handleRegister(event)">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" id="reg-firstname" class="form-control" placeholder="John" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" id="reg-lastname" class="form-control" placeholder="Doe" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" id="reg-phone" class="form-control" placeholder="+1 234 567 890" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="reg-username" class="form-control" placeholder="Choose a username" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="reg-email" class="form-control" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="reg-password" class="form-control" placeholder="Min 6 characters" required minlength="4">
+      </div>
+      <button type="submit" class="btn btn-primary w-full" style="margin-bottom:1rem;">
+        <i class="fas fa-user-plus"></i> Create Customer Account
+      </button>
+      <p class="text-center text-muted">Already have an account? <a href="login.html" style="color:var(--blue); font-weight:600;">Sign In</a></p>
+    </form>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    async function handleRegister(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const original = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+      btn.disabled = true;
+
+      try {
+        const payload = {
+          username: document.getElementById('reg-username').value.trim(),
+          email: document.getElementById('reg-email').value.trim(),
+          password: document.getElementById('reg-password').value,
+          roleName: 'CUSTOMER',
+          firstName: document.getElementById('reg-firstname').value.trim(),
+          lastName: document.getElementById('reg-lastname').value.trim(),
+          phoneNumber: document.getElementById('reg-phone').value.trim()
+        };
+
+        const token = await API.register(payload.username, payload.email, payload.password, payload.roleName, payload.firstName, payload.lastName, payload.phoneNumber);
+        Auth.setToken(token);
+        await Auth.initUser();
+        UI.toast('Account created successfully!');
+        window.location.href = 'customer-dashboard.html';
+      } catch (err) {
+        UI.toast(err.message, 'error');
+        btn.innerHTML = original;
+        btn.disabled = false;
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>

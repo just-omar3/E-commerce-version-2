@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account | Amazona</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-top">
+      <a href="index.html" class="logo"><i class="fas fa-bolt"></i> Ama<span>zona</span></a>
+      <div class="search-bar">
+        <input type="text" id="global-search" placeholder="Search...">
+        <button><i class="fas fa-search"></i></button>
+      </div>
+      <nav class="nav-actions" id="main-nav"></nav>
+    </div>
+  </header>
+
+  <div class="dashboard">
+    <aside class="sidebar">
+      <h3 style="margin-bottom:1.5rem; font-size:1.1rem;"><i class="fas fa-user-circle"></i> Customer Portal</h3>
+      <ul class="sidebar-menu">
+        <li><a href="#" class="active" onclick="showSection('orders', this)"><i class="fas fa-shopping-bag"></i> My Orders</a></li>
+        <li><a href="#" onclick="showSection('profile', this)"><i class="fas fa-id-card"></i> Profile</a></li>
+        <li><a href="products.html"><i class="fas fa-store"></i> Shop</a></li>
+        <li><a href="#" onclick="Auth.logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </aside>
+    <div class="main-content">
+      <div id="section-orders">
+        <h2 class="section-title" style="margin-top:0"><i class="fas fa-shopping-bag"></i> My Orders</h2>
+        <div id="orders-list"><div class="spinner"></div></div>
+      </div>
+      <div id="section-profile" class="hidden">
+        <h2 class="section-title" style="margin-top:0"><i class="fas fa-id-card"></i> My Profile</h2>
+        <div class="card" style="max-width:600px;">
+          <div class="card-body" id="profile-card">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Items Modal -->
+  <div class="modal-overlay" id="order-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-box"></i> Order Details</h3>
+        <button class="modal-close" onclick="UI.closeModal('order-modal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="order-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('order-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    if (!Auth.requireRole(['CUSTOMER','ADMIN','SUPER_ADMIN'])) {}
+
+    function showSection(name, el) {
+      document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+      if (el) el.classList.add('active');
+      document.getElementById('section-orders').classList.toggle('hidden', name !== 'orders');
+      document.getElementById('section-profile').classList.toggle('hidden', name !== 'profile');
+    }
+
+    async function loadOrders() {
+      const container = document.getElementById('orders-list');
+      UI.showLoading('orders-list');
+      try {
+        const userId = Auth.getUserId();
+        const orders = await API.getOrdersByUser(userId);
+        if (!orders || orders.length === 0) {
+          container.innerHTML = '<div class="empty-state"><i class="fas fa-shopping-bag"></i><h3>No orders yet</h3><p>You have not placed any orders. <a href="products.html">Start shopping</a></p></div>';
+          return;
+        }
+        container.innerHTML = `
+          <div class="table-container">
+            <table class="data-table">
+              <thead><tr><th>Order #</th><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${orders.map(o => `
+                  <tr>
+                    <td>#${o.orderId}</td>
+                    <td>${UI.formatDate(o.orderDate)}</td>
+                    <td style="font-weight:700;">${UI.formatPrice(o.totalPrice)}</td>
+                    <td><span class="status-badge status-${(o.status||'pending').toLowerCase()}">${o.status||'PENDING'}</span></td>
+                    <td><button class="btn btn-sm btn-secondary" onclick="viewOrderItems(${o.orderId})"><i class="fas fa-eye"></i> View</button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } catch (e) {
+        container.innerHTML = '<div class="empty-state">Failed to load orders.</div>';
+      }
+    }
+
+    async function viewOrderItems(orderId) {
+      const body = document.getElementById('order-modal-body');
+      body.innerHTML = '<div class="spinner"></div>';
+      UI.openModal('order-modal');
+      try {
+        const items = await API.getOrderItems(orderId);
+        if (!items || items.length === 0) {
+          body.innerHTML = '<div class="empty-state">No items found.</div>';
+          return;
+        }
+        body.innerHTML = `
+          <table class="data-table">
+            <thead><tr><th>Product</th><th>Unit Price</th><th>Qty</th><th>Total</th></tr></thead>
+            <tbody>
+              ${items.map(i => `
+                <tr>
+                  <td>${i.product ? i.product.productName : 'Unknown'}</td>
+                  <td>${UI.formatPrice(i.unitPrice)}</td>
+                  <td>${i.quantity}</td>
+                  <td style="font-weight:700;">${UI.formatPrice(i.totalPrice)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (e) {
+        body.innerHTML = '<div class="empty-state">Failed to load items.</div>';
+      }
+    }
+
+    async function loadProfile() {
+      const card = document.getElementById('profile-card');
+      try {
+        const user = await API.getCurrentUser();
+        card.innerHTML = `
+          <div class="form-group"><label class="form-label">User ID</label><input type="text" class="form-control" value="${user.userId}" disabled></div>
+          <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-control" value="${user.userName}" disabled></div>
+          <div class="form-group"><label class="form-label">Email</label><input type="text" class="form-control" value="${user.email}" disabled></div>
+          <div class="form-group"><label class="form-label">Role</label><input type="text" class="form-control" value="${Auth.getRole()}" disabled></div>
+        `;
+      } catch (e) {
+        card.innerHTML = '<div class="empty-state">Failed to load profile.</div>';
+      }
+    }
+
+    loadOrders();
+    loadProfile();
+  </script>
+</body>
+</html>

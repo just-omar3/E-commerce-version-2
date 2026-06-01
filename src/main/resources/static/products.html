@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products | Amazona</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-top">
+      <a href="index.html" class="logo"><i class="fas fa-bolt"></i> Ama<span>zona</span></a>
+      <div class="search-bar">
+        <input type="text" id="global-search" placeholder="Search products...">
+        <button onclick="doSearch()"><i class="fas fa-search"></i></button>
+      </div>
+      <nav class="nav-actions" id="main-nav"></nav>
+    </div>
+    <div class="subnav">
+      <a href="#" onclick="filterCategory('all')">All</a>
+      <a href="#" onclick="filterCategory('Electronics')">Electronics</a>
+      <a href="#" onclick="filterCategory('Fashion')">Fashion</a>
+      <a href="#" onclick="filterCategory('Home')">Home</a>
+      <a href="#" onclick="filterCategory('Sports')">Sports</a>
+      <a href="#" onclick="filterCategory('Books')">Books</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="flex flex-between mb-2">
+      <h2 class="section-title" style="margin:0"><i class="fas fa-box-open"></i> <span id="category-title">All Products</span></h2>
+      <div class="flex gap-1" id="admin-actions" style="display:none">
+        <button class="btn btn-primary" onclick="openProductModal()"><i class="fas fa-plus"></i> Add Product</button>
+      </div>
+    </div>
+    <div id="products-grid" class="product-grid">
+      <div class="spinner"></div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom" style="border:none; padding:1.5rem;">
+      <p>&copy; 2026 Amazona Inc. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let currentPage = 0;
+    const pageSize = 12;
+    let allProducts = [];
+    let currentCategory = 'all';
+    let currentSearch = '';
+
+    function doSearch() {
+      const q = document.getElementById('global-search').value.trim().toLowerCase();
+      currentSearch = q;
+      currentPage = 0;
+      applyFilters();
+    }
+
+    function filterCategory(cat) {
+      currentCategory = cat;
+      currentPage = 0;
+      document.getElementById('category-title').textContent = cat === 'all' ? 'All Products' : cat + ' Products';
+
+      document.querySelectorAll('.subnav a').forEach(a => {
+        a.style.fontWeight = a.textContent.includes(cat === 'all' ? 'All' : cat) ? '700' : '400';
+        a.style.color = a.textContent.includes(cat === 'all' ? 'All' : cat) ? 'white' : '#ccc';
+      });
+      applyFilters();
+    }
+
+    function applyFilters() {
+      let filtered = allProducts;
+
+
+      if (currentCategory !== 'all') {
+        filtered = filtered.filter(p => p.category && p.category.toLowerCase() === currentCategory.toLowerCase());
+      }
+
+
+      if (currentSearch) {
+        filtered = filtered.filter(p => 
+          (p.productName && p.productName.toLowerCase().includes(currentSearch)) ||
+          (p.category && p.category.toLowerCase().includes(currentSearch))
+        );
+      }
+
+      renderProducts(filtered, currentPage);
+    }
+
+    function renderProducts(products, page) {
+      const container = document.getElementById('products-grid');
+      const pagContainer = document.getElementById('pagination');
+
+      if (products.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><h3>No products found</h3><p>Try a different category or search term.</p></div>';
+        pagContainer.innerHTML = '';
+        return;
+      }
+
+      const totalPages = Math.ceil(products.length / pageSize);
+      const start = page * pageSize;
+      const pageProducts = products.slice(start, start + pageSize);
+
+      container.innerHTML = pageProducts.map(p => UI.renderProductCard(p)).join('');
+      renderPagination(page, totalPages);
+    }
+
+    function renderPagination(page, total) {
+      const el = document.getElementById('pagination');
+      if (total <= 1) { el.innerHTML = ''; return; }
+      let html = `<button class="page-btn" ${page===0?'disabled':''} onclick="changePage(${page-1})"><i class="fas fa-chevron-left"></i></button>`;
+      for (let i=0;i<total;i++) {
+        html += `<button class="page-btn ${i===page?'active':''}" onclick="changePage(${i})">${i+1}</button>`;
+      }
+      html += `<button class="page-btn" ${page>=total-1?'disabled':''} onclick="changePage(${page+1})"><i class="fas fa-chevron-right"></i></button>`;
+      el.innerHTML = html;
+    }
+
+    function changePage(page) {
+      currentPage = page;
+      applyFilters();
+    }
+
+    async function loadAllProducts() {
+      const container = document.getElementById('products-grid');
+      UI.showLoading('products-grid');
+      try {
+
+        const data = await API.getProducts(0, 1000);
+        allProducts = data.content || data || [];
+
+
+        const params = new URLSearchParams(window.location.search);
+        const catParam = params.get('category');
+        const searchParam = params.get('search');
+        if (catParam) {
+          currentCategory = catParam;
+          document.getElementById('category-title').textContent = catParam + ' Products';
+        }
+        if (searchParam) {
+          currentSearch = searchParam.toLowerCase();
+          document.getElementById('global-search').value = searchParam;
+        }
+
+        applyFilters();
+      } catch (e) {
+        container.innerHTML = '<div class="empty-state">Failed to load products. Please try again later.</div>';
+      }
+    }
+
+    (function init() {
+      const role = Auth.getRole();
+      if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'PRODUCT_MANAGER' || role === 'EMPLOYEE') {
+        document.getElementById('admin-actions').style.display = 'flex';
+      }
+      loadAllProducts();
+    })();
+  </script>
+</body>
+</html>

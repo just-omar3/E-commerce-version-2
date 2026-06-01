@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel | Amazona</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-top">
+      <a href="index.html" class="logo"><i class="fas fa-bolt"></i> Ama<span>zona</span></a>
+      <div class="search-bar">
+        <input type="text" id="global-search" placeholder="Search...">
+        <button><i class="fas fa-search"></i></button>
+      </div>
+      <nav class="nav-actions" id="main-nav"></nav>
+    </div>
+  </header>
+
+  <div class="dashboard">
+    <aside class="sidebar">
+      <h3 style="margin-bottom:1.5rem; font-size:1.1rem;"><i class="fas fa-shield-alt"></i> Admin Panel</h3>
+      <ul class="sidebar-menu">
+        <li><a href="#" class="active" onclick="showSection('users', this)"><i class="fas fa-users"></i> Users</a></li>
+        <li><a href="#" onclick="showSection('products', this)"><i class="fas fa-boxes"></i> Products</a></li>
+        <li><a href="#" onclick="showSection('orders', this)"><i class="fas fa-clipboard-list"></i> Orders</a></li>
+        <li><a href="employee-dashboard.html"><i class="fas fa-briefcase"></i> Employee View</a></li>
+        <li><a href="index.html"><i class="fas fa-store"></i> Storefront</a></li>
+        <li><a href="#" onclick="Auth.logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </aside>
+    <div class="main-content">
+      <div id="section-users">
+        <div class="flex flex-between mb-2">
+          <h2 class="section-title" style="margin:0"><i class="fas fa-users"></i> User Management</h2>
+          <button class="btn btn-primary" onclick="openUserModal()"><i class="fas fa-plus"></i> Add User</button>
+        </div>
+        <div id="users-list"><div class="spinner"></div></div>
+      </div>
+      <div id="section-products" class="hidden">
+        <div class="flex flex-between mb-2">
+          <h2 class="section-title" style="margin:0"><i class="fas fa-boxes"></i> Product Management</h2>
+          <button class="btn btn-primary" onclick="openProductModal()"><i class="fas fa-plus"></i> Add Product</button>
+        </div>
+        <div id="admin-products-list"><div class="spinner"></div></div>
+      </div>
+      <div id="section-orders" class="hidden">
+        <h2 class="section-title" style="margin-top:0"><i class="fas fa-clipboard-list"></i> All Orders</h2>
+        <div id="admin-orders-list"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Modal -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="user-modal-title"><i class="fas fa-user-plus"></i> Add User</h3>
+        <button class="modal-close" onclick="UI.closeModal('user-modal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="user-form" onsubmit="return saveUser(event)">
+          <input type="hidden" id="u-id">
+          <div class="form-group"><label class="form-label">Username</label><input type="text" id="u-name" class="form-control" required></div>
+          <div class="form-group"><label class="form-label">Email</label><input type="email" id="u-email" class="form-control" required></div>
+          <div class="form-group"><label class="form-label">Password</label><input type="password" id="u-pass" class="form-control" placeholder="Leave blank to keep unchanged on edit"></div>
+          <div class="form-group">
+            <label class="form-label">Role Name</label>
+            <select id="u-role" class="form-control" required>
+              <option value="CUSTOMER">CUSTOMER</option>
+              <option value="EMPLOYEE">EMPLOYEE</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+              <option value="PRODUCT_MANAGER">PRODUCT_MANAGER</option>
+              <option value="ORDER_MANAGER">ORDER_MANAGER</option>
+              <option value="CUSTOMER_SUPPORT">CUSTOMER_SUPPORT</option>
+            </select>
+          </div>
+          <div class="modal-footer" style="padding:1rem 0 0 0; border:none;">
+            <button type="button" class="btn btn-outline" style="color:var(--text); border-color:var(--border);" onclick="UI.closeModal('user-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Modal -->
+  <div class="modal-overlay" id="product-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="product-modal-title"><i class="fas fa-box"></i> Add Product</h3>
+        <button class="modal-close" onclick="UI.closeModal('product-modal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="product-form" onsubmit="return saveProduct(event)">
+          <input type="hidden" id="prod-id">
+          <div class="form-group"><label class="form-label">Product Name</label><input type="text" id="prod-name" class="form-control" required></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div class="form-group"><label class="form-label">Price ($)</label><input type="number" step="0.01" id="prod-price" class="form-control" required></div>
+            <div class="form-group"><label class="form-label">Stock Quantity</label><input type="number" id="prod-stock" class="form-control" required></div>
+          </div>
+          <div class="form-group"><label class="form-label">Category</label><input type="text" id="prod-category" class="form-control" required></div>
+          <div class="modal-footer" style="padding:1rem 0 0 0; border:none;">
+            <button type="button" class="btn btn-outline" style="color:var(--text); border-color:var(--border);" onclick="UI.closeModal('product-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Items Modal -->
+  <div class="modal-overlay" id="order-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-box"></i> Order Details</h3>
+        <button class="modal-close" onclick="UI.closeModal('order-modal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="order-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('order-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    if (!Auth.requireRole(['ADMIN','SUPER_ADMIN'])) {}
+
+    function showSection(name, el) {
+      document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+      if (el) el.classList.add('active');
+      ['users','products','orders'].forEach(s => {
+        document.getElementById('section-'+s).classList.toggle('hidden', s !== name);
+      });
+    }
+
+    async function loadUsers() {
+      const container = document.getElementById('users-list');
+      UI.showLoading('users-list');
+      try {
+        const users = await API.getUsers();
+        if (!users || users.length === 0) { container.innerHTML = '<div class="empty-state">No users found.</div>'; return; }
+        container.innerHTML = `
+          <div class="table-container">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${users.map(u => `
+                  <tr>
+                    <td>#${u.userId}</td>
+                    <td style="font-weight:600;">${u.userName}</td>
+                    <td>${u.email}</td>
+                    <td>
+                      <button class="btn btn-sm btn-secondary" onclick="editUser(${u.userId})"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.userId})"><i class="fas fa-trash"></i></button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load users.</div>'; }
+    }
+
+    async function loadAdminProducts() {
+      const container = document.getElementById('admin-products-list');
+      UI.showLoading('admin-products-list');
+      try {
+        const data = await API.getProducts(0, 100);
+        const products = data.content || [];
+        if (products.length === 0) { container.innerHTML = '<div class="empty-state">No products.</div>'; return; }
+        container.innerHTML = `
+          <div class="table-container">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${products.map(p => `
+                  <tr>
+                    <td>#${p.productId}</td>
+                    <td style="font-weight:600;">${p.productName}</td>
+                    <td>${p.category}</td>
+                    <td>${UI.formatPrice(p.price)}</td>
+                    <td>${p.stockQuantity}</td>
+                    <td>
+                      <button class="btn btn-sm btn-secondary" onclick="editProduct(${p.productId})"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.productId})"><i class="fas fa-trash"></i></button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load products.</div>'; }
+    }
+
+    async function loadAdminOrders() {
+      const container = document.getElementById('admin-orders-list');
+      UI.showLoading('admin-orders-list');
+      try {
+        const orders = await API.getAllOrders();
+        if (!orders || orders.length === 0) { container.innerHTML = '<div class="empty-state">No orders.</div>'; return; }
+        container.innerHTML = `
+          <div class="table-container">
+            <table class="data-table">
+              <thead><tr><th>Order #</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${orders.map(o => `
+                  <tr>
+                    <td>#${o.orderId}</td>
+                    <td>${o.user ? o.user.userName : 'N/A'}</td>
+                    <td>${UI.formatDate(o.orderDate)}</td>
+                    <td style="font-weight:700;">${UI.formatPrice(o.totalPrice)}</td>
+                    <td><span class="status-badge status-${(o.status||'pending').toLowerCase()}">${o.status||'PENDING'}</span></td>
+                    <td><button class="btn btn-sm btn-secondary" onclick="viewOrderItems(${o.orderId})"><i class="fas fa-eye"></i></button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load orders.</div>'; }
+    }
+
+    async function viewOrderItems(orderId) {
+      const body = document.getElementById('order-modal-body');
+      body.innerHTML = '<div class="spinner"></div>';
+      UI.openModal('order-modal');
+      try {
+        const items = await API.getOrderItems(orderId);
+        body.innerHTML = items.length ? `
+          <table class="data-table"><thead><tr><th>Product</th><th>Unit Price</th><th>Qty</th><th>Total</th></tr></thead>
+          <tbody>${items.map(i => `<tr><td>${i.product?i.product.productName:'Unknown'}</td><td>${UI.formatPrice(i.unitPrice)}</td><td>${i.quantity}</td><td style="font-weight:700;">${UI.formatPrice(i.totalPrice)}</td></tr>`).join('')}</tbody></table>
+        ` : '<div class="empty-state">No items.</div>';
+      } catch (e) { body.innerHTML = '<div class="empty-state">Error loading items.</div>'; }
+    }
+
+    function openUserModal(user=null) {
+      document.getElementById('user-form').reset();
+      document.getElementById('u-id').value = '';
+      document.getElementById('user-modal-title').innerHTML = '<i class="fas fa-user-plus"></i> Add User';
+      if (user) {
+        document.getElementById('u-id').value = user.userId;
+        document.getElementById('u-name').value = user.userName;
+        document.getElementById('u-email').value = user.email;
+        document.getElementById('u-role').value = user.role ? user.role.roleName : 'CUSTOMER';
+        if (user.person) {
+          document.getElementById('u-firstname').value = user.person.firstName || '';
+          document.getElementById('u-lastname').value = user.person.lastName || '';
+          document.getElementById('u-phone').value = user.person.phoneNumber || '';
+        }
+        document.getElementById('user-modal-title').innerHTML = '<i class="fas fa-edit"></i> Edit User';
+      }
+      UI.openModal('user-modal');
+    }
+
+    async function saveUser(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      btn.disabled = true;
+      try {
+        const id = document.getElementById('u-id').value;
+        const user = {
+          userName: document.getElementById('u-name').value,
+          email: document.getElementById('u-email').value,
+          password: document.getElementById('u-pass').value,
+          role: { roleName: document.getElementById('u-role').value },
+          person: {
+            firstName: document.getElementById('u-firstname').value.trim(),
+            lastName: document.getElementById('u-lastname').value.trim(),
+            phoneNumber: document.getElementById('u-phone').value.trim()
+          }
+        };
+        if (id) {
+          user.userId = parseInt(id);
+          await API.updateUser(id, user);
+          UI.toast('User updated');
+        } else {
+          await API.createUser(user);
+          UI.toast('User created');
+        }
+        UI.closeModal('user-modal');
+        loadUsers();
+      } catch (err) { UI.toast(err.message, 'error'); }
+      btn.innerHTML = orig; btn.disabled = false;
+      return false;
+    }
+
+    async function editUser(id) {
+      try {
+        const u = await API.getUser(id);
+        openUserModal(u);
+      } catch (e) { UI.toast(e.message, 'error'); }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Delete this user?')) return;
+      try { await API.deleteUser(id); UI.toast('User deleted'); loadUsers(); }
+      catch (e) { UI.toast(e.message, 'error'); }
+    }
+
+    function openProductModal(product=null) {
+      document.getElementById('product-form').reset();
+      document.getElementById('prod-id').value = '';
+      document.getElementById('product-modal-title').innerHTML = '<i class="fas fa-plus"></i> Add Product';
+      if (product) {
+        document.getElementById('prod-id').value = product.productId;
+        document.getElementById('prod-name').value = product.productName;
+        document.getElementById('prod-price').value = product.price;
+        document.getElementById('prod-stock').value = product.stockQuantity;
+        document.getElementById('prod-category').value = product.category;
+        document.getElementById('product-modal-title').innerHTML = '<i class="fas fa-edit"></i> Edit Product';
+      }
+      UI.openModal('product-modal');
+    }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      btn.disabled = true;
+      try {
+        const id = document.getElementById('prod-id').value;
+        const product = {
+          productName: document.getElementById('prod-name').value,
+          price: parseFloat(document.getElementById('prod-price').value),
+          stockQuantity: parseInt(document.getElementById('prod-stock').value),
+          category: document.getElementById('prod-category').value
+        };
+        if (id) {
+          product.productId = parseInt(id);
+          await API.updateProduct(id, product);
+          UI.toast('Product updated');
+        } else {
+          await API.createProduct(product);
+          UI.toast('Product created');
+        }
+        UI.closeModal('product-modal');
+        loadAdminProducts();
+      } catch (err) { UI.toast(err.message, 'error'); }
+      btn.innerHTML = orig; btn.disabled = false;
+      return false;
+    }
+
+    async function editProduct(id) {
+      try { const p = await API.getProduct(id); openProductModal(p); }
+      catch (e) { UI.toast(e.message, 'error'); }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Delete this product?')) return;
+      try { await API.deleteProduct(id); UI.toast('Product deleted'); loadAdminProducts(); }
+      catch (e) { UI.toast(e.message, 'error'); }
+    }
+
+    loadUsers();
+    loadAdminProducts();
+    loadAdminOrders();
+  </script>
+</body>
+</html>

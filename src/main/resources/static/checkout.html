@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | Amazona</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-top">
+      <a href="index.html" class="logo"><i class="fas fa-bolt"></i> Ama<span>zona</span></a>
+      <nav class="nav-actions" id="main-nav"></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h2 class="section-title"><i class="fas fa-credit-card"></i> Secure Checkout</h2>
+    <div style="display:grid; grid-template-columns:1fr 360px; gap:2rem;">
+      <div>
+        <div class="card mb-2">
+          <div class="card-body">
+            <h3 class="mb-2"><i class="fas fa-truck"></i> Shipping Information</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+              <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-control" value="John"></div>
+              <div class="form-group"><label class="form-label">Last Name</label><input type="text" class="form-control" value="Doe"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Address</label><input type="text" class="form-control" value="123 Main Street"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+              <div class="form-group"><label class="form-label">City</label><input type="text" class="form-control" value="New York"></div>
+              <div class="form-group"><label class="form-label">State</label><input type="text" class="form-control" value="NY"></div>
+              <div class="form-group"><label class="form-label">ZIP</label><input type="text" class="form-control" value="10001"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h3 class="mb-2"><i class="fas fa-box"></i> Order Items</h3>
+            <div id="checkout-items"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cart-summary">
+        <h3>Payment Summary</h3>
+        <div class="summary-row"><span>Items</span><span id="checkout-count">0</span></div>
+        <div class="summary-row"><span>Subtotal</span><span id="checkout-subtotal">$0.00</span></div>
+        <div class="summary-row"><span>Shipping</span><span class="text-success">FREE</span></div>
+        <div class="summary-row total"><span>Order Total</span><span id="checkout-total">$0.00</span></div>
+        <button class="btn btn-primary w-full mt-2" onclick="placeOrder()" id="place-order-btn">
+          <i class="fas fa-lock"></i> Place Order
+        </button>
+        <p class="text-muted text-center mt-2" style="font-size:0.8rem;"><i class="fas fa-shield-alt"></i> Secure 256-bit SSL encrypted</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    if (!Auth.requireAuth()) {}
+
+    function renderCheckoutItems() {
+      const items = Cart.getItems();
+      const container = document.getElementById('checkout-items');
+      if (items.length === 0) {
+        container.innerHTML = '<div class="empty-state">Your cart is empty. <a href="products.html">Go shopping</a></div>';
+        document.getElementById('place-order-btn').disabled = true;
+        return;
+      }
+      container.innerHTML = items.map(i => `
+        <div class="flex flex-between" style="padding:0.75rem 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;">${i.productName}</div>
+            <div class="text-muted" style="font-size:0.85rem;">Qty: ${i.quantity}</div>
+          </div>
+          <div style="font-weight:700;">$${(i.price * i.quantity).toFixed(2)}</div>
+        </div>
+      `).join('');
+      document.getElementById('checkout-count').textContent = items.length;
+      document.getElementById('checkout-subtotal').textContent = '$' + Cart.getTotal().toFixed(2);
+      document.getElementById('checkout-total').textContent = '$' + Cart.getTotal().toFixed(2);
+    }
+
+    async function placeOrder() {
+      const btn = document.getElementById('place-order-btn');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+      btn.disabled = true;
+      try {
+        const items = Cart.getItems().map(i => ({ productId: i.productId, quantity: i.quantity }));
+        const userId = Auth.getUserId();
+        await API.createOrder({ userId, items });
+        Cart.clear();
+        UI.toast('Order placed successfully!');
+        window.location.href = 'order-success.html';
+      } catch (e) {
+        UI.toast(e.message, 'error');
+        btn.innerHTML = '<i class="fas fa-lock"></i> Place Order';
+        btn.disabled = false;
+      }
+    }
+
+    renderCheckoutItems();
+  </script>
+</body>
+</html>

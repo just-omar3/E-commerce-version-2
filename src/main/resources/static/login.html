@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Amazona</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <a href="index.html" class="logo" style="color:var(--dark); justify-content:center; margin-bottom:1rem;"><i class="fas fa-bolt"></i> Ama<span>zona</span></a>
+      <h2>Welcome Back</h2>
+      <p>Sign in to your account to continue</p>
+    </div>
+
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-full" style="margin-bottom:1rem;">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </button>
+      <p class="text-center text-muted">Do not have an account? <a href="register.html" style="color:var(--blue); font-weight:600;">Create one</a></p>
+    </form>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const original = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+      btn.disabled = true;
+
+      try {
+        const userName = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const token = await API.login(userName, password);
+        Auth.setToken(token);
+        await Auth.initUser();
+        const role = Auth.getRole();
+        UI.toast('Login successful!');
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        if (redirect) {
+          window.location.href = decodeURIComponent(redirect);
+        } else if (role === 'EMPLOYEE' || role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'PRODUCT_MANAGER' || role === 'ORDER_MANAGER') {
+          window.location.href = 'employee-dashboard.html';
+        } else {
+          window.location.href = 'customer-dashboard.html';
+        }
+      } catch (err) {
+        UI.toast(err.message, 'error');
+        btn.innerHTML = original;
+        btn.disabled = false;
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>

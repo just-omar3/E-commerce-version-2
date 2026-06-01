@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head><title>Debug - Amazona</title></head>
+<body>
+<h1>Debug Page</h1>
+<h2>Test API Endpoints</h2>
+<button onclick="testProducts()">Test GET /products</button>
+<button onclick="testRegister()">Test POST /auth/register</button>
+<button onclick="testLogin()">Test POST /auth/login</button>
+<pre id="output"></pre>
+
+<script>
+const BASE = '
+function log(msg) {
+    document.getElementById('output').textContent += msg + "\n";
+}
+
+async function testProducts() {
+    log("=== Testing GET /products ===");
+    try {
+        const res = await fetch(BASE + '/products?page=0&size=5');
+        log("Status: " + res.status);
+        const data = await res.json();
+        log("Response: " + JSON.stringify(data, null, 2).substring(0, 500));
+    } catch(e) { log("ERROR: " + e.message); }
+}
+
+async function testRegister() {
+    log("=== Testing POST /auth/register ===");
+    try {
+        const res = await fetch(BASE + '/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: "testuser" + Date.now(),
+                email: "test" + Date.now() + "@test.com",
+                password: "password123",
+                roleName: "CUSTOMER"
+            })
+        });
+        log("Status: " + res.status);
+        const text = await res.text();
+        log("Response: " + text.substring(0, 500));
+    } catch(e) { log("ERROR: " + e.message); }
+}
+
+async function testLogin() {
+    log("=== Testing POST /auth/login ===");
+    try {
+        const res = await fetch(BASE + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userName: "admin", password: "admin" })
+        });
+        log("Status: " + res.status);
+        const text = await res.text();
+        log("Response: " + text.substring(0, 500));
+    } catch(e) { log("ERROR: " + e.message); }
+}
+</script>
+</body>
+</html>
