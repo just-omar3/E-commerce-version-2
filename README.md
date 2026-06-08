@@ -1,6 +1,6 @@
 # 🚀 Full-Stack E-Commerce Platform
 
-A production-oriented e-commerce platform built with **Spring Boot 3**, **Spring Security**, **JWT Authentication**, **Spring Data JPA**, and **Microsoft SQL Server**.
+A production-oriented e-commerce platform built with **Spring Boot **, **Spring Security**, **JWT Authentication**, **Spring Data JPA**, and **Microsoft SQL Server**.
 
 The project demonstrates modern backend development practices including authentication, authorization, transaction management, optimistic locking, role-based access control, REST API design, and database modeling.
 
@@ -243,8 +243,8 @@ Implemented using Spring Security expressions and service-layer ownership checks
 
 | Category            | Technology            |
 | ------------------- | --------------------- |
-| Language            | Java 17               |
-| Framework           | Spring Boot 3         |
+| Language            | Java 26               |
+| Framework           | Spring Boot           |
 | Security            | Spring Security       |
 | Authentication      | JWT                   |
 | Password Encryption | BCrypt                |
@@ -255,7 +255,7 @@ Implemented using Spring Security expressions and service-layer ownership checks
 | Build Tool          | Maven                 |
 | Frontend            | HTML, CSS, JavaScript |
 | Version Control     | Git                   |
-| API Testing         | Postman               |
+| API Testing         | HTTP Client           |
 
 ---
 
@@ -362,18 +362,6 @@ http://localhost:8080
 
 ---
 
-# 📸 Screenshots
-
-Add screenshots here:
-
-* Home Page
-* Product Catalog
-* Customer Dashboard
-* Employee Dashboard
-* Admin Dashboard
-* Login Page
-
----
 
 # 🎯 What This Project Demonstrates
 
@@ -396,12 +384,10 @@ This project showcases:
 * Refresh token support
 * Swagger/OpenAPI documentation
 * Docker containerization
-* Global exception handling
 * Email verification
 * Audit logging
 * Advanced analytics
 * Integration testing
-* CI/CD pipeline
 
 ---
 
